@@ -1,0 +1,7 @@
+services:
+  custom-http-server:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./content:/app/content
