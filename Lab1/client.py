@@ -12,7 +12,7 @@ class SimpleHttpClient:
         directory.mkdir(parents=True, exist_ok=True)
         filepath = directory / filename
         filepath.write_bytes(content)
-        print(f"✅ Saved file: {filepath} ({len(content)} bytes)")
+        print(f"Saved file: {filepath} ({len(content)} bytes)")
 
     def _parse_response(self, response: bytes) -> Tuple[str, Dict[str, str], bytes]:
         """Splits an HTTP response into status line, headers, and body."""
@@ -54,7 +54,7 @@ class SimpleHttpClient:
 
         except (socket.gaierror, ConnectionRefusedError, socket.timeout) as e:
             print(
-                f"❌ Error: Connection to {host}:{port} failed. {e}", file=sys.stderr)
+                f"Error: Connection to {host}:{port} failed. {e}", file=sys.stderr)
             return None
 
     def fetch(self, host: str, port: int, resource: str, save_dir: str) -> None:
