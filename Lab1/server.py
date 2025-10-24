@@ -71,6 +71,7 @@ class SynchronousStreamServer:
     def _handle_request(self, conn: socket.socket, addr: tuple) -> None:
         """Handles a single client connection sequentially."""
         try:
+            logging.info(conn)
             parsed_request = self._parse_request(conn)
             if not parsed_request:
                 logging.warning(
