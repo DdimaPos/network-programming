@@ -7,4 +7,4 @@ COPY content ./content
 
 EXPOSE 8080
 
-CMD ["python", "serverMultithread.py", "content"]
+CMD ["python", "serverMultithread.py", "content", "8080"]

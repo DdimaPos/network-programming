@@ -3,6 +3,7 @@ import sys
 import mimetypes
 import urllib.parse
 import logging
+import time
 from pathlib import Path
 from http import HTTPStatus
 from typing import Optional, Tuple
@@ -85,6 +86,8 @@ class SynchronousStreamServer:
             if method != "GET":
                 self._send_error(conn, HTTPStatus.METHOD_NOT_ALLOWED, addr)
                 return
+
+            time.sleep(1)
 
             relative_path = urllib.parse.unquote(path.lstrip('/'))
             requested_path = (self.base_dir / relative_path).resolve()

@@ -13,13 +13,31 @@ from collections import defaultdict, deque
 request_counts = defaultdict(int)  # path -> number of requests
 counts_lock = threading.Lock()
 
-# Rate limiting feature
+# rate limiting feature
 rate_limits = defaultdict(deque)   # ip -> timestamps of recent requests
 rate_lock = threading.Lock()
 
 # configs
-RATE_LIMIT = 10
+RATE_LIMIT = 3
 WORK_DELAY = 1.0  # in seconds
+
+
+def extract_client_identifier(request_data: str, socket_addr: tuple) -> str:
+    """Extract client IP for rate limiting (IP only, no port)"""
+
+    # try X-Forwarded-For from nginx
+    for line in request_data.splitlines():
+        if line.lower().startswith("x-forwarded-for:"):
+            client_ip = line.split(":",
+                                   1)[1].strip().split(",")[0].strip()
+            print(f"[CLIENT ID] X-Forwarded-For: {client_ip}",
+                  file=sys.stderr)
+            return client_ip
+
+    # direct connection - use socket IP only
+    client_ip = socket_addr[0]
+    print(f"[CLIENT ID] Direct connection: {client_ip}", file=sys.stderr)
+    return client_ip
 
 
 def check_rate_limit(ip: str) -> bool:
@@ -89,7 +107,7 @@ class ThreadedHttpServer:
                 pass
             self.server_socket.close()
 
-    def _parse_request(self, conn: socket.socket) -> Optional[Tuple[str, str]]:
+    def _parse_request(self, conn: socket.socket) -> Optional[Tuple[str, str, str]]:
         # This method remains the same
         try:
             request_data = conn.recv(2048).decode("utf-8")
@@ -97,24 +115,27 @@ class ThreadedHttpServer:
                 return None
             request_line = request_data.splitlines()[0]
             method, path, _ = request_line.split()
-            return method, path
+            return method, path, request_data
         except (ValueError, IndexError, UnicodeDecodeError):
             return None
 
     def _handle_request(self, conn: socket.socket, addr: tuple) -> None:
         try:
-            ip = addr[0]
-            # use addr of client to check rate limit
-            if not check_rate_limit(ip):
-                self._send_error(conn, HTTPStatus.TOO_MANY_REQUESTS)
-                return
-
             parsed_request = self._parse_request(conn)
             if not parsed_request:
                 self._send_error(conn, HTTPStatus.BAD_REQUEST)
                 return
 
-            method, path = parsed_request
+            method, path, request_data = parsed_request
+
+            # Extract unique client identifier for rate limiting
+            client_id = extract_client_identifier(request_data, addr)
+
+            # use the unique client identifier to check rate limit
+            if not check_rate_limit(client_id):
+                self._send_error(conn, HTTPStatus.TOO_MANY_REQUESTS)
+                return
+
             if method != "GET":
                 self._send_error(conn, HTTPStatus.METHOD_NOT_ALLOWED)
                 return
@@ -234,7 +255,6 @@ class ThreadedHttpServer:
                    "Content-Length": str(len(body))}
         response = self._build_response(HTTPStatus.OK, headers, body)
         conn.sendall(response)
-    # --- END OF MODIFIED SECTION ---
 
     def _build_header_block(self, status: HTTPStatus, headers: dict) -> bytes:
         """Constructs just the header part of an HTTP response."""
@@ -250,14 +270,12 @@ class ThreadedHttpServer:
         return header_block + body
 
     def _send_error(self, conn: socket.socket, status: HTTPStatus) -> None:
-        # --- MODIFIED: Add a more informative error body ---
         body_str = (f"<html><head><title>{status.value} {status.phrase}</title></head>"
                     f"<body><h1>{status.value} {status.phrase}</h1>")
         if status == HTTPStatus.TOO_MANY_REQUESTS:
             body_str += f"<p>Rate limit exceeded. Please try again later.</p>"
         body_str += "</body></html>"
         body = body_str.encode("utf-8")
-        # --- END OF MODIFIED SECTION ---
 
         headers = {"Content-Type": "text/html; charset=UTF-8",
                    "Content-Length": str(len(body))}
