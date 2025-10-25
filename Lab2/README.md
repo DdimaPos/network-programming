@@ -320,12 +320,4 @@ on another device data was successfully retrieved, but at slower speed.
 
 ![image at path content/ipawareness](content/ipawareness.png)
 
-### Update
-
-After setting up nginx that will play a role of proxy, that will add set the X-Forwarded-For
-differently for each IP that tries to connect. In this case each TCP connection is correctly identified
-and the IP address will forwarded to program
-
-Simple workflow is Phone -> Laptop -> Docker -> NGINX (read - x-forwarded-for) -> Program and backwards (from my understanding)
-
-![image at path content/terminal](content/terminal.png)
+Solution with nginx not working as expected locally
