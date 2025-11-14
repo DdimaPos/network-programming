@@ -18,7 +18,7 @@ rate_limits = defaultdict(deque)   # ip -> timestamps of recent requests
 rate_lock = threading.Lock()
 
 # configs
-RATE_LIMIT = 3
+RATE_LIMIT = 5
 WORK_DELAY = 1.0  # in seconds
 
 
