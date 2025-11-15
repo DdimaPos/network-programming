@@ -1,0 +1,11 @@
+services:
+  memory-scramble:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./boards:/app/boards:ro
+    environment:
+      - NODE_ENV=production
+    command: ["node", "dist/src/server.js", "8080", "boards/zoom.txt"]
+    restart: unless-stopped
