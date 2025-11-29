@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  leader:
+    build: .
+    container_name: kv-leader
+    environment:
+      - ROLE=leader
+      # The leader needs to know the addresses of all followers for replication
+      - FOLLOWERS=http://follower-1:8000,http://follower-2:8000,http://follower-3:8000,http://follower-4:8000,http://follower-5:8000
+      - WRITE_QUORUM=3
+      - MIN_DELAY=0
+      - MAX_DELAY=1.0
+    ports:
+      - "8001:8000"
+    depends_on:
+      - follower-1
+      - follower-2
+      - follower-3
+      - follower-4
+      - follower-5
+    networks:
+      - kv-network
+
+  follower-1:
+    build: .
+    container_name: kv-follower-1
+    environment:
+      - ROLE=follower
+    ports:
+      - "8002:8000"
+    networks:
+      - kv-network
+
+  follower-2:
+    build: .
+    container_name: kv-follower-2
+    environment:
+      - ROLE=follower
+    ports:
+      - "8003:8000"
+    networks:
+      - kv-network
+
+  follower-3:
+    build: .
+    container_name: kv-follower-3
+    environment:
+      - ROLE=follower
+    ports:
+      - "8004:8000"
+    networks:
+      - kv-network
+
+  follower-4:
+    build: .
+    container_name: kv-follower-4
+    environment:
+      - ROLE=follower
+    ports:
+      - "8005:8000"
+    networks:
+      - kv-network
+
+  follower-5:
+    build: .
+    container_name: kv-follower-5
+    environment:
+      - ROLE=follower
+    ports:
+      - "8006:8000"
+    networks:
+      - kv-network
+
+networks:
+  kv-network:
+    driver: bridge
